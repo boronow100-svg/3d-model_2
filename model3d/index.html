@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Podgląd modelu 3D</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #111;
+      color: white;
+      font-family: sans-serif;
+    }
+    #colorPicker {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <input type="color" id="colorPicker" value="#00ff00" title="Zmień kolor modelu" />
+
+  <script type="module">
+    import * as THREE from "https://unpkg.com/three@0.161.0/build/three.module.js";
+    import { STLLoader } from "https://unpkg.com/three@0.161.0/examples/jsm/loaders/STLLoader.js";
+    import { OrbitControls } from "https://unpkg.com/three@0.161.0/examples/jsm/controls/OrbitControls.js";
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Światła
+    const light1 = new THREE.DirectionalLight(0xffffff, 1);
+    light1.position.set(1, 1, 1);
+    scene.add(light1);
+    scene.add(new THREE.AmbientLight(0x404040));
+
+    // Ładowanie pliku STL
+    const loader = new STLLoader();
+    let modelMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+    let mesh;
+
+    loader.load('cos.stl', function (geometry) {
+      mesh = new THREE.Mesh(geometry, modelMaterial);
+      geometry.computeBoundingBox();
+      const center = geometry.boundingBox.getCenter(new THREE.Vector3());
+      mesh.position.sub(center);
+      scene.add(mesh);
+    });
+
+    // Kontrola kamerą
+    const controls = new OrbitControls(camera, renderer.domElement);
+    camera.position.set(0, 0, 100);
+    controls.update();
+
+    // Reakcja na zmianę koloru
+    document.getElementById("colorPicker").addEventListener("input", (e) => {
+      modelMaterial.color.set(e.target.value);
+    });
+
+    // Dopasowanie do okna
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Renderowanie
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
